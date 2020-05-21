@@ -1,5 +1,6 @@
 #ifndef __GLUTGAME_LIBS_H__
 #define __GLUTGAME_LIBS_H__
+	#include <GL/glut.h>
 	#include "glutGameCore.h"
 	#include "glutGameControl.h"
 	#include "glutGameConfig.h"
