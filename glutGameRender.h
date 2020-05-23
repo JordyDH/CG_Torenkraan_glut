@@ -14,5 +14,7 @@ double glutGameRenderGetFPS();
 void glutGameRenderAllObjects();
 void glutGameRenderObject(glutGameObjectobject *object);
 void glutGameRenderCompileList();
+void glutGameRenderAllLights();
+void glutGameRenderLight(glutGameObjectlight *object);
 
 #endif

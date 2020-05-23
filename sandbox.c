@@ -36,12 +36,29 @@ void keyboard(unsigned int key)
 		printf("Kraan 3 geselecteerd\n");
 		kraan_select = kranen[2];
 	}
+	if(key == 'r')
+		(*(*kraan_select).obj_disk).rot_y += 1;
+	if(key == 'R')
+		(*(*kraan_select).obj_disk).rot_y -= 1;
+	if(key == 'g')
+		(*(*kraan_select).obj_last).lf_mem[0] += 0.1;
+	if(key == 'G')
+		(*(*kraan_select).obj_last).lf_mem[0] -= 0.1;
+	if(key == 'y')
+		(*(*kraan_select).obj_last).lf_mem[1] += 0.1;
+	if(key == 'Y')
+		(*(*kraan_select).obj_last).lf_mem[1] -= 0.1;
 }
 
 
 void world()
 {
-	glutGameObjectobject *dummy;
+	//Render light points
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	glShadeModel(GL_SMOOTH);
+	glEnable(GL_LIGHTING);
+	glutGameRenderAllLights();
+	//Debug axis
 	glLineWidth(3);
 	glBegin(GL_LINES);
 		glColor3f(1,0,0);
@@ -54,7 +71,12 @@ void world()
 		glVertex3f(0,0,0);
 		glVertex3f(0,0,3);
 	glEnd();
+
+	//Render static elements (floors)
+
+	//Render objecten
 	glutGameRenderAllObjects();
+	glDisable(GL_LIGHTING);
 }
 
 int main( int argc, char * argv[])
@@ -75,9 +97,16 @@ int main( int argc, char * argv[])
 	glutGameControlEnable();
 	glutGameRenderSceneSet(world);
 	//Define objects in render list
-	kranen[0] = torenkraan_AllocObj(0,0,0,10);
-	kranen[1] = torenkraan_AllocObj(10,0,12,10);
-	kranen[2] = torenkraan_AllocObj(-10,0,-15,10);
+	kranen[0] = torenkraan_AllocObj(0,0,0,5,10);
+	glutGameObjectlight *light_0 = glutGameObjectsAlloc_light();
+	float color[4] = {1.0,1.0,1.0,0.0};
+	(*light_0).ambient  = color;
+	(*light_0).diffuse  = color;
+	(*light_0).specular = color;
+	(*light_0).id = GL_LIGHT0;
+	(*light_0).enable = 1;
+	(*light_0).z = 10;
+	(*light_0).y = 5;
 	//default selected crane
 	kraan_select = kranen[0];
 	//Start all services and run engine

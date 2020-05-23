@@ -34,6 +34,18 @@ typedef struct {
 	double rotation_y;		//Head rotation (up/down) of the player
 } glutGameObjectplayer;
 
+#define GLUTGAME_STRUCTID_LIGHT		3
+typedef struct{
+	uint8_t enable;			//Enable flag of the light
+	double x, y, z, w;		//X y z position of light, and weight value
+	double rot_x, rot_y, rot_z;	//X y z rotation of light, and weight value
+	struct object *linkedobj;       //Linked Object: move to default 0,0,0 point to the values of the linked object (can only be bound to object models not lights)
+	float *ambient; 		//Ambient color
+	float *diffuse;			//Diffuse color
+	float *specular;		//Specular color
+	GLenum id;			//OpenGL light ID (0...7), ex: GL_LIGHT0
+} glutGameObjectlight;
+
 typedef struct ObjectListnode {		//Linked list to store pointers to objects (or anly element)
 	uint8_t struct_id;		//Type id, what type of struct is this pointing to.
 	void *object;			//Void pointer to any entry of the memory
@@ -44,6 +56,7 @@ typedef struct ObjectListnode {		//Linked list to store pointers to objects (or 
 glutGameObjectList *glutGameObjectsGetList();
 glutGameObjectobject *glutGameObjectsAlloc_object();
 glutGameObjectplayer *glutGameObjectsAlloc_player();
+glutGameObjectlight *glutGameObjectsAlloc_light();
 void glutGameObjectsAddList(void *element, uint8_t id);
 
 

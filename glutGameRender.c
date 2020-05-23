@@ -178,12 +178,72 @@ void glutGameRenderAllObjects()
 	objectList = glutGameObjectsGetList();
 	for(;objectList!=0;objectList = (*objectList).next)
 	{
-	if((*objectList).struct_id == GLUTGAME_STRUCTID_OBJECT)
+		if((*objectList).struct_id == GLUTGAME_STRUCTID_OBJECT)
+		{
+			p = (*objectList).object;
+			glutGameRenderObject(p);
+		}
+	}
+}
+
+/*
+* Function : void glutGameRenderAllObjects()
+* Renders all the objects in the object list in the 3D scene
+*/
+void glutGameRenderAllLights()
+{
+	glutGameObjectList *objectList;
+	glutGameObjectlight *p;
+
+	objectList = glutGameObjectsGetList();
+	for(;objectList!=0;objectList = (*objectList).next)
 	{
-		p = (*objectList).object;
-		glutGameRenderObject(p);
+		if((*objectList).struct_id == GLUTGAME_STRUCTID_LIGHT)
+		{
+			p = (*objectList).object;
+			glutGameRenderLight(p);
+		}
 	}
+}
+
+/*
+* Function : void glutGameRenderObject(glutGameObjectobject *object)
+* Render a single object in the 3D Scene
+* With linked obj support
+*/
+void glutGameRenderLight(glutGameObjectlight *object)
+{
+	uint64_t depth = 0;
+	glPushMatrix();
+	glutGameObjectobject *reff;
+	//Depth scan of the linked object list
+	for(reff = (*object).linkedobj; reff != 0x00; reff = (*reff).linkedobj) depth++;
+	//Go from the bottom of the list to the top
+	for(int64_t i = depth; i >= 1; i--)
+	{
+		reff = (*object).linkedobj;
+		//Start from the bottom and move up
+		for(uint64_t j = 0; j < i-1; j++) reff = (*reff).linkedobj;
+		//Translate axis to the reff object
+		glTranslatef((*reff).x,(*reff).y,(*reff).z);
+		//Rotate axis to the reff object
+		if((*reff).rot_x != 0) glRotatef((*reff).rot_x,1,0,0);
+		if((*reff).rot_y != 0) glRotatef((*reff).rot_y,0,1,0);
+		if((*reff).rot_z != 0) glRotatef((*reff).rot_z,0,0,1);
 	}
+	//Render light
+	//Set color (#TODO track change status in light to speed up process)
+	glLightfv((*object).id,GL_AMBIENT,(*object).ambient);
+	glLightfv((*object).id,GL_DIFFUSE,(*object).diffuse);
+	glLightfv((*object).id,GL_SPECULAR,(*object).specular);
+	//Enable or disable the light
+	if((*object).enable) glEnable((*object).id);
+	else glDisable((*object).id);
+	//Place light at correct possition
+	float pos[4];
+	pos[0] = (*object).x; pos[1] = (*object).y; pos[2] = (*object).z; pos[3]= (*object).w;
+	glLightfv((*object).id ,GL_POSITION ,&pos[0]);
+	glPopMatrix();
 }
 
 /*

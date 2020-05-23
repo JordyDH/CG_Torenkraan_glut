@@ -53,6 +53,19 @@ glutGameObjectplayer *glutGameObjectsAlloc_player()
 }
 
 /*
+* Function: glutGameObjectplayer *glutGameObjectsAlloc_player()
+* -----------------------------
+* Allocate memory for a player model and append it to the objectList
+*/
+glutGameObjectlight *glutGameObjectsAlloc_light()
+{
+	glutGameObjectlight *p;
+	p = (glutGameObjectlight*)calloc(1,sizeof(glutGameObjectlight));
+	glutGameObjectsAddList(p,GLUTGAME_STRUCTID_LIGHT);
+	return p;
+}
+
+/*
 * Function: void glutGameObjectsAddList(void *element, uint8_t id)
 * -----------------------------
 * Append a given object to the objectList wwith ID
