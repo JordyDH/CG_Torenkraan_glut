@@ -38,7 +38,7 @@ void glutGameInit()
 
 	mainplayer = glutGameObjectsAlloc_player();
 	glutGameControlInit(mainplayer);
-	glutGameCameraInit(mainplayer,-46,96,-46);
+	glutGameCameraInit(mainplayer,0,0,5);
 	glutGameDebugInit(mainplayer);
 }
 

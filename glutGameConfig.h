@@ -15,7 +15,7 @@
 #define GLUTGAME_CONTROL_TIMER	1	//time in ms to check input of keyboard control bits
 //////////////////////////////////// PLAYER MODEL ////////////////////////////////////
 #define GLUTGAME_PLAYER_HEIGHT		1.0	//Default player height, possition of the camera
-#define GLUTGAME_PLAYER_BASESPEED	0.5	//Default step size
+#define GLUTGAME_PLAYER_BASESPEED	0.2	//Default step size
 #define GLUTGAME_PLAYER_NEARSIGHT	0.01	//Near sight param of the camera
 #define GLUTGAME_PLAYER_FARSIGHT	1000	//Far sight param of the camera
 

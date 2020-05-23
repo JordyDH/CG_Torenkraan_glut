@@ -12,7 +12,7 @@ LIBS = -lglut -lGLU -lGL -lGLw -lXt -lXext -lX11 -ljpeg -lm
 DEBUGFLAGS = -Ofast -g
 CFLAGS = -DD32 $(DEBUGFLAGS) $(INCPATH) 
 SRCS = \
-	sandbox.c glutGameCore.c glutGameObjects.c glutGameCamera.c glutGameControl.c glutGameRender.c glutGameDebug.c InitJPG.c
+	sandbox.c obj_torenkraan.c glutGameCore.c glutGameObjects.c glutGameCamera.c glutGameControl.c glutGameRender.c glutGameDebug.c InitJPG.c
 
 OBJS = $(SRCS:.c=.o)
 
@@ -54,8 +54,12 @@ sandbox:  clean $(OBJS)
 	LDOPTS= \
 	cc -o sandbox $(CFLAGS) $(OBJS) $(LIBPATH) $(LIBS) 
 
+obj_torenkraan:  clean $(OBJS)
+	LDOPTS= \
+	cc -o obj_torenkraan $(CFLAGS) $(OBJS) $(LIBPATH) $(LIBS) 
+
 clean:
-	rm -f sandbox glutGameCore glutGameControl glutGameObjects glutGameRender glutGameCamera glutGameDebug InitJPG $(OBJS) core
+	rm -f sandbox obj_torenkraan glutGameCore glutGameControl glutGameObjects glutGameRender glutGameCamera glutGameDebug InitJPG $(OBJS) core
 
 print:
 	listing sandbox.h $(SRCS)

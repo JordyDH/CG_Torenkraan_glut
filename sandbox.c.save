@@ -6,10 +6,6 @@
 #include "InitJPG.h"
 #include "obj_torenkraan.h"
 
-#define MAX 3
-static Kraan_struct *kranen[MAX];
-static Kraan_struct *kraan_select;
-
 void myinit(void)
 {
 	glClearColor(0,0,0,0);
@@ -20,22 +16,7 @@ void myinit(void)
 
 void keyboard(unsigned int key)
 {
-	//With 1/2/3 a specific crane can be selected
-	if(key == '1')
-	{
-		printf("Kraan 1 geselecteerd\n");
-		kraan_select = kranen[0];
-	}
-	if(key == '2')
-	{
-		printf("Kraan 2 geselecteerd\n");
-		kraan_select = kranen[1];
-	}
-	if(key == '3')
-	{
-		printf("Kraan 3 geselecteerd\n");
-		kraan_select = kranen[2];
-	}
+
 }
 
 
@@ -54,7 +35,8 @@ void world()
 		glVertex3f(0,0,0);
 		glVertex3f(0,0,3);
 	glEnd();
-	glutGameRenderAllObjects();
+	torenkraan_kolom(dummy);
+
 }
 
 int main( int argc, char * argv[])
@@ -74,12 +56,6 @@ int main( int argc, char * argv[])
 	glutGameKeyboardSetFunc(keyboard);
 	glutGameControlEnable();
 	glutGameRenderSceneSet(world);
-	//Define objects in render list
-	kranen[0] = torenkraan_AllocObj(0,0,0,10);
-	kranen[1] = torenkraan_AllocObj(10,0,12,10);
-	kranen[2] = torenkraan_AllocObj(-10,0,-15,10);
-	//default selected crane
-	kraan_select = kranen[0];
 	//Start all services and run engine
 	glutGameMainLoop();
 }
