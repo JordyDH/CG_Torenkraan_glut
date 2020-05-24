@@ -16,5 +16,7 @@ void glutGameRenderObject(glutGameObjectobject *object);
 void glutGameRenderCompileList();
 void glutGameRenderAllLights();
 void glutGameRenderLight(glutGameObjectlight *object);
-
+void glutGameRenderSetPerspective();
+void glutGameRenderSetOrtho();
+void glutGameRenderSetFrustum();
 #endif

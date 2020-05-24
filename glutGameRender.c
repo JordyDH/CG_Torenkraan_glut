@@ -23,7 +23,7 @@ static double	fps = 0;
 static uint64_t screen_width = 0, screen_height = 0;
 static uint64_t world_buffer = 0;
 static uint64_t rendertimebase = 0;
-
+static uint8_t	perspective_mode = 0;	//0-Perspective 1-Orho
 /*
 * Function : void glutGameRenderService()
 * RenderService routine
@@ -125,6 +125,29 @@ void glutGameRender()
 }
 
 /*
+* Functions to set the perspective camera mode
+*/
+
+void glutGameRenderSetPerspective()
+{
+	//Set the mode and force call Rescale
+	perspective_mode=0;
+	glutGameRescale(screen_width,screen_height);
+}
+void glutGameRenderSetOrtho()
+{
+	//Set the mode and force call Rescale
+	perspective_mode=1;
+	glutGameRescale(screen_width,screen_height);
+}
+void glutGameRenderSetFrustum()
+{
+	//Set the mode and force call Rescale
+	perspective_mode=2;
+	glutGameRescale(screen_width,screen_height);
+}
+
+/*
 * Function: void glutGameRescale()
 * Used to update the camera aspect ratio and parameters
 * when the screen size is changed.
@@ -134,9 +157,20 @@ void glutGameRender()
 */
 void glutGameRescale(GLint n_w, GLint n_h)
 {
+	float aspect = (float)n_w/n_h;
+	float scale = 10.0;
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60.0, (double)n_w/n_h,  GLUTGAME_PLAYER_NEARSIGHT, GLUTGAME_PLAYER_FARSIGHT);
+	if(perspective_mode == 0) gluPerspective(60.0, aspect,  GLUTGAME_PLAYER_NEARSIGHT, GLUTGAME_PLAYER_FARSIGHT);
+	if(perspective_mode == 1)
+	{
+		if(n_w <= n_h)  glOrtho(-scale, scale,-scale/aspect,scale/aspect,  GLUTGAME_PLAYER_NEARSIGHT, GLUTGAME_PLAYER_FARSIGHT);
+		else		glOrtho(-scale*aspect,scale*aspect,-scale,scale,  GLUTGAME_PLAYER_NEARSIGHT, GLUTGAME_PLAYER_FARSIGHT);
+	}
+	if(perspective_mode == 2)
+	{
+		glFrustum(-GLUTGAME_PLAYER_NEARSIGHT,GLUTGAME_PLAYER_NEARSIGHT,-GLUTGAME_PLAYER_NEARSIGHT,GLUTGAME_PLAYER_NEARSIGHT,GLUTGAME_PLAYER_NEARSIGHT,GLUTGAME_PLAYER_FARSIGHT);
+	}
 	glViewport(0, 0, n_w, n_h);
 	screen_width = n_w; screen_height = n_h;
 }
@@ -207,12 +241,13 @@ void glutGameRenderAllLights()
 }
 
 /*
-* Function : void glutGameRenderObject(glutGameObjectobject *object)
-* Render a single object in the 3D Scene
+* Function : void glutGameRenderLight(glutGameObjectlight *object)
+* Render a single light source in the 3D Scene
 * With linked obj support
 */
 void glutGameRenderLight(glutGameObjectlight *object)
 {
+	float no_color[4] = {0.0, 0.0, 0.0 ,0.0};
 	uint64_t depth = 0;
 	glPushMatrix();
 	glutGameObjectobject *reff;
@@ -233,16 +268,47 @@ void glutGameRenderLight(glutGameObjectlight *object)
 	}
 	//Render light
 	//Set color (#TODO track change status in light to speed up process)
-	glLightfv((*object).id,GL_AMBIENT,(*object).ambient);
-	glLightfv((*object).id,GL_DIFFUSE,(*object).diffuse);
-	glLightfv((*object).id,GL_SPECULAR,(*object).specular);
+	if((*object).ambient != 0x00)  glLightfv((*object).id,GL_AMBIENT,(*object).ambient);
+	else glLightfv((*object).id,GL_AMBIENT,&no_color[0]);
+	if((*object).diffuse != 0x00)  glLightfv((*object).id,GL_DIFFUSE,(*object).diffuse);
+	else glLightfv((*object).id,GL_DIFFUSE,&no_color[0]);
+	if((*object).specular != 0x00) glLightfv((*object).id,GL_SPECULAR,(*object).specular);
+	else glLightfv((*object).id,GL_SPECULAR,&no_color[0]);
+	//Spot effect of the light
+	if((*object).spot_enable)
+	{
+		glLightf ( (*object).id , GL_SPOT_CUTOFF, (*object).spot_cutoff);
+		glLightfv( (*object).id , GL_SPOT_DIRECTION, &(*object).spot_direction[0]);
+		glLightf ( (*object).id , GL_SPOT_EXPONENT, (*object).spot_exponent);
+	}
 	//Enable or disable the light
 	if((*object).enable) glEnable((*object).id);
 	else glDisable((*object).id);
 	//Place light at correct possition
+	//#TODO Change xyzw to array -> pos array not needed then
 	float pos[4];
 	pos[0] = (*object).x; pos[1] = (*object).y; pos[2] = (*object).z; pos[3]= (*object).w;
 	glLightfv((*object).id ,GL_POSITION ,&pos[0]);
+	//Render debug cube of light source
+	if((*object).debug && (*object).enable)
+	{
+		glPushAttrib(GL_CURRENT_BIT|GL_LIGHTING_BIT);
+		glDisable(GL_LIGHTING);
+		if((*object).ambient != 0x00) glColor4fv((*object).ambient);
+		else if((*object).diffuse != 0x00)  glColor4fv((*object).diffuse);
+		else if((*object).specular != 0x00) glColor4fv((*object).specular);
+		//Render light direction
+		glBegin(GL_LINES);
+			//If spot enable different end point
+			if((*object).spot_enable) glVertex3fv(&(*object).spot_direction[0]);
+			else glVertex3f(0,0,0);
+			glVertex3f(pos[0],pos[1],pos[2]);
+		glEnd();
+		glTranslatef(pos[0],pos[1],pos[2]);
+		glutSolidCube(0.25);
+		glPopAttrib();
+		glEnable(GL_LIGHTING);
+	}
 	glPopMatrix();
 }
 
@@ -251,6 +317,15 @@ void glutGameRenderLight(glutGameObjectlight *object)
 * Render a single object in the 3D Scene
 * With linked obj support
 */
+void clearAllMaterials()
+{
+	const float no_color[4] = {0.0, 0.0, 0.0, 0.0};
+	glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT, no_color);
+	glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE, no_color);
+	glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR, no_color);
+	glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS , 0.0);
+
+}
 void glutGameRenderObject(glutGameObjectobject *object)
 {
 	uint64_t depth = 0;
@@ -273,6 +348,24 @@ void glutGameRenderObject(glutGameObjectobject *object)
 	}
 	//Callback for drawing the object
 	(*(*object).callback)(object);
+	if((*object).local_axis)
+	{
+		clearAllMaterials();
+		glPushAttrib(GL_ENABLE_BIT);
+		glDisable(GL_LIGHTING);
+		glBegin(GL_LINES);
+			glColor3f(1,0,0);
+			glVertex3f(0,0,0);
+			glVertex3f(3,0,0);
+			glColor3f(0,1,0);
+			glVertex3f(0,0,0);
+			glVertex3f(0,3,0);
+			glColor3f(0,0,1);
+			glVertex3f(0,0,0);
+			glVertex3f(0,0,3);
+		glEnd();
+		glPopAttrib();
+	}
 	glPopMatrix();
 }
 
