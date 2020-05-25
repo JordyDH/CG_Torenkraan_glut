@@ -7,12 +7,34 @@
 #include "obj_torenkraan.h"
 #include "materiaal.h"
 
+#define NO_FANCY
+
 #define MAX 3
-static glutGameObjectlight *lichten[3];
-static Kraan_struct *kranen[MAX];
-static Kraan_struct *kraan_select;
-static uint32_t last_systick = 0;
-static uint8_t flag_smooth = 0;
+static glutGameObjectlight *lichten[MAX];	//Pointer to light models for the global scene
+static Kraan_struct *kranen[MAX];		//Pointer array to store aantal kranen
+static Kraan_struct *kraan_select = 0x00;	//Pointer to select a kraan in the array
+static uint32_t last_systick = 0;		//Local variable to store last systick
+static uint8_t flag_smooth = 0;			//Flag for smooth lighting
+uint8_t kraan_actief[MAX] = {0,0,0};		//The active flag for this kraan
+static double kraan_location[MAX][3] = {	//Location data to enable 3 kranen
+	{0.0, 0.0, 0.0},
+	{15.0, 0.0, -10.0},
+	{-10.0, 0.0, -15.0}
+	};
+static uint16_t kraan_size[MAX][2] = {		//The height and lenght parameters
+	{5, 10},
+	{5, 8},
+	{7, 9}
+	};
+static GLenum kraan_light[MAX] = {		//Light id's for the kabine
+	GL_LIGHT7, GL_LIGHT6, GL_LIGHT5};
+
+static double camera_locations[3][5] = {	//3 predefine locations for the camera
+	{12.0, 26.0, 50.00, 0.00, -0.36},
+	{12.0, -8.0, -42.0, 3.157, 0.23},
+	{-14.0, 18.5, 0.00, 2.21, -0.49}
+	};
+
 // INIT functie -----------------------------------------------------------------
 void myinit(void)
 {
@@ -46,10 +68,14 @@ void keyboard(unsigned int key)
 	if(key == '4') glutGameRenderSetPerspective();
 	if(key == '5') glutGameRenderSetOrtho();
 	if(key == '6') glutGameRenderSetFrustum();
+	// With 7 8 9 you can change the location of the camera ----------------------
+	if( key == '7')	glutGameCameraPlace(camera_locations[0][0], camera_locations[0][1], camera_locations[0][2], camera_locations[0][3], camera_locations[0][4]);
+	if( key == '8')	glutGameCameraPlace(camera_locations[1][0], camera_locations[1][1], camera_locations[1][2], camera_locations[1][3], camera_locations[1][4]);
+	if( key == '9')	glutGameCameraPlace(camera_locations[2][0], camera_locations[2][1], camera_locations[2][2], camera_locations[2][3], camera_locations[2][4]);
 	//Kraan specifieke controle --------------------------------------------------
 	if(kraan_select != 0x00)
 	{
-		if(key == 'l')	//Set quad mode to wireframe of fill
+		if(key == 'l')	//Set quad mode to wireframe or fill
 		{
 			(*(*kraan_select).obj_cab).i_mem[0] = ~(*(*kraan_select).obj_cab).i_mem[0];
 			(*(*kraan_select).obj_disk).i_mem[0] = ~(*(*kraan_select).obj_disk).i_mem[0];
@@ -73,8 +99,10 @@ void keyboard(unsigned int key)
 		if( key == 'E') (*kraan_select).shinniness -= 5;		//Decrement spot exponent with 5
 		if( key == 'j') (*kraan_select).flag_localaxis = 1;		//Enable local axis render
 		if( key == 'J') (*kraan_select).flag_localaxis = 0;		//Disable local axis render
-		if( key == 'h') (*(*kraan_select).light).spot_direction[1] += 0.5;		//Disable local axis render
-		if( key == 'H') (*(*kraan_select).light).spot_direction[1] -= 0.5;		//Disable local axis render
+		if( key == 'h') (*(*kraan_select).light).spot_direction[1] += 0.5;		//Increment y of spot direction
+		if( key == 'H') (*(*kraan_select).light).spot_direction[1] -= 0.5;		//Decrement y of spot direction
+		if( key == 'k') (*(*kraan_select).obj_cab).i_mem[1] = ~(*(*kraan_select).obj_cab).i_mem[1];	//Mesh point rendering
+		if( key == 'f') (*(*kraan_select).obj_cab).i_mem[2] = ~(*(*kraan_select).obj_cab).i_mem[2];	//Control transparantie
 	}
 	if( key == 'a') (*lichten[0]).enable = 1;	//Enable first light
 	if( key == 'A') (*lichten[0]).enable = 0;	//Disable first light
@@ -84,6 +112,22 @@ void keyboard(unsigned int key)
 	if( key == 'C') (*lichten[2]).enable = 0;	//Disable Third light
 	if( key == 's') flag_smooth = 1;		//Enable smooth lighting
 	if( key == 'S') flag_smooth = 0;		//Enable flatt lighting
+	if( key == 'n')					//Add one more kraan to the scene
+	{
+		for(uint8_t i = 0; i < MAX; i++)
+		{
+			//Search for empty spot
+			if(kraan_actief[i] == 0x00)
+			{
+				//Allocate a kraan model
+				kranen[i] = torenkraan_AllocObj(kraan_location[i][0],kraan_location[i][1],kraan_location[i][2],kraan_size[i][0],kraan_size[i][1],kraan_light[i]);
+				kraan_actief[i] = 1;
+				kraan_select = kranen[i];
+				printf("Kraan geplaats met id:%d druk op %d om te selecteren\n",i,i);
+				break;
+			}
+		}
+	}
 }
 
 // Animatie functie -----------------------------------------------------------------
@@ -147,12 +191,18 @@ int main( int argc, char * argv[])
 {
 	//backend Glut init ---------------------------------------------------------
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
+
+	#ifndef NO_FANCY
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_LINE_SMOOTH);
 	glEnable(GL_POLYGON_SMOOTH);
+	#else
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+	#endif
+
 	glutInitWindowPosition(0,0);
-	glutInitWindowSize(1920, 1080);
+	glutInitWindowSize(680, 480);
 	glutCreateWindow("JORDY DE HOON - TORENKRAAN");
 	//GlutGame Engine init ------------------------------------------------------
 	myinit();
@@ -161,9 +211,6 @@ int main( int argc, char * argv[])
 	glutGameControlEnable();
 	glutGameRenderSceneSet(world);
 	glutGameSetIdleFunc(animation);
-	//Define objects in render list ---------------------------------------------
-	kranen[0] = torenkraan_AllocObj(0,0,0,5,10,GL_LIGHT3);
-	kranen[1] = torenkraan_AllocObj(20,0,0,5,10,GL_LIGHT4);
 	//Define Global light sources for the scene ---------------------------------
 	// [ Licht 0 ]
 	lichten[0] = glutGameObjectsAlloc_light();
@@ -194,8 +241,8 @@ int main( int argc, char * argv[])
 	(*lichten[2]).z = -10;
 	(*lichten[2]).y = -10;
 	(*lichten[2]).w = 0.0;
-	//default selected crane ----------------------------------------------------
-	kraan_select = kranen[0];
+	//Place camera at the default location came_location[0] ---------------------
+	glutGameCameraPlace(camera_locations[0][0], camera_locations[0][1], camera_locations[0][2], camera_locations[0][3], camera_locations[0][4]);
 	//Start all services and run engine -----------------------------------------
 	glutGameMainLoop();
 }

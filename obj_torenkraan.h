@@ -26,5 +26,6 @@ void torenkraan_disk(glutGameObjectobject *self);
 void torenkraan_kabine(glutGameObjectobject *self);
 void torenkraan_arm(glutGameObjectobject *self);
 void torenkraan_last(glutGameObjectobject *self);
+void torenkraan_gewicht(glutGameObjectobject *self);
 
 #endif

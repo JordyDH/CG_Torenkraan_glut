@@ -21,7 +21,7 @@
 
 //////////////////////////////////// RENDER SETTINGS ////////////////////////////////////
 #define GLUTGAME_RENDER_FAST			//Renders the scene as fast a possible.
-//#define GLUTGAME_RENDER_DUBBELBUFFER		//Enable dubbel buffering for render.
+ #define GLUTGAME_RENDER_DUBBELBUFFER		//Enable dubbel buffering for render.
 #define GLUTGAME_SYSTICK_INTERVAL	25	//Interval between systicks in ms
 #define GLUTGAME_RENDER_LIMITER		17	//Render limiter, time between frames in ms
 

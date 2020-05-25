@@ -119,7 +119,7 @@ void glutGameRenderOnScreenInfo()
 	sprintf(text,"[%s%.3f]"," zPos: ",(*zPos));
 	glutBitmapString(GLUT_BITMAP_9_BY_15,text);
 	glRasterPos2f(5,80);
-	sprintf(text,"[%s%.3f]","rotation_xz: ",sin((*rotation_lr)));
+	sprintf(text,"[%s%.3f]","rotation_xz: ",(*rotation_lr));
 	glutBitmapString(GLUT_BITMAP_9_BY_15,text);
 	sprintf(text,"[%s%.3f]"," rotation_y: ",(*rotation_ud));
 	glutBitmapString(GLUT_BITMAP_9_BY_15,text);

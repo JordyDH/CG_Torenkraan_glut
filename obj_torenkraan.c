@@ -27,12 +27,16 @@
 #define TK_ARM_LENGHT	2.0
 #define TK_ARM_TUBESIZE	0.2
 #define TK_ARM_SLICES	10
-#define TK_ARM_BACKPIECES 3
+#define TK_ARM_BACKPIECES 4
 // ----------------------------------------------------------------------------------
 #define TK_LAST_PLATE_DEPTH	0.1
 #define TK_LAST_PLATE_WIDTH	1.0
 #define TK_LAST_HEIGHT		1.0
 #define TK_LAST_OFFSET		0.5
+// ----------------------------------------------------------------------------------
+#define TK_WEIGHT_HEIGHT	TK_CAB_HEIGHT
+#define TK_WEIGHT_WIDTH		TK_ARM_WIDTH
+#define TK_WEIGHT_DEPTH		1.0
 // ----------------------------------------------------------------------------------
 
 // Local prototyping for internal function
@@ -159,6 +163,17 @@ Kraan_struct* torenkraan_AllocObj(double x, double y, double z, uint16_t height,
 		obj_prev = obj;		//This is now the previous object
 		(*obj).pf_mem[0] = &(*kraan_obj).shinniness;	//Link global shinniness value to obj
 		(*obj).p_mem[1] = &(*kraan_obj).flag_localaxis;	//link flag to enable local axis
+		//Skip the first arm
+		if(i != 0)
+		{
+			//Draw gewicht
+			obj = glutGameObjectsAlloc_object();	//Allocate memory in buffer
+			(*obj).callback = torenkraan_gewicht;	//Bind drawing callback
+			(*obj).linkedobj = obj_prev;		//Link object
+			(*obj).z = TK_ARM_LENGHT/2;
+			(*obj).pf_mem[0] = &(*kraan_obj).shinniness;	//Link global shinniness value to obj
+			(*obj).p_mem[1] = &(*kraan_obj).flag_localaxis;	//link flag to enable local axis
+		}
 	}
 	return kraan_obj;	//Kraan fully described in buffer and return the generated struct
 }
@@ -232,7 +247,8 @@ void torenkraan_disk(glutGameObjectobject *self)
 void torenkraan_kabine(glutGameObjectobject *self)
 {
 	//i_mem[0] to enable wire mesh in window
-	//self parameter to control the opacity of the windows
+	//i_mem[1] to enable point rendering mesh
+	//i_mem[2] to enbale transparantie
 	//p_mem[1] : to enable local axis
 	if( (*(*self).p_mem[1]) ) (*self).local_axis = 1;
 	else (*self).local_axis = 0;
@@ -281,8 +297,11 @@ void torenkraan_kabine(glutGameObjectobject *self)
 		}
 	}
 	//Enable transparity
-	glEnable(GL_BLEND);
-	glDepthMask(GL_FALSE);
+	if((*self).i_mem[2])
+	{
+		glEnable(GL_BLEND);
+		glDepthMask(GL_FALSE);
+	}
 	//Material specs
 	glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,bruin_ambient);
 	glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,bruin_diffuse);
@@ -294,14 +313,29 @@ void torenkraan_kabine(glutGameObjectobject *self)
 	glMapGrid2f(20, 0.0, 1.0, 20, 0.0, 1.0);
 	glEvalMesh2(GL_FILL, 0, 20, 0, 20);
 	//Disable transparity
-	glDepthMask(GL_TRUE);
-	glDisable(GL_BLEND);
+	if((*self).i_mem[2])
+	{
+		glDepthMask(GL_TRUE);
+		glDisable(GL_BLEND);
+	}
 	//Draw mesh is flag is enabled
 	if((*self).i_mem[0])
 	{
 		glEvalMesh2(GL_LINE, 0, 20, 0, 20);
 	}
 	glDisable(GL_MAP2_VERTEX_3);
+	//Draw mesh points -------------------------------------------------
+	if((*self).i_mem[1])
+	{
+		for(uint16_t i = 0; i < TK_WINDOW_SEGH; i++)
+			for(uint16_t j = 0; j < TK_WINDOW_SEGW; j++)
+			{
+				glPushMatrix();
+				glTranslatef(mesh[i][j][0],mesh[i][j][1],mesh[i][j][2]);
+				glutSolidCube(0.05);
+				glPopMatrix();
+			}
+	}
 	glPopMatrix();
 }
 
@@ -390,6 +424,76 @@ void torenkraan_last(glutGameObjectobject *self)
 		gluCylinder(quad, TK_ARM_TUBESIZE/2, TK_ARM_TUBESIZE/2, (*self).lf_mem[1], 5, 1);
 	glPopMatrix();
 }
+
+void torenkraan_gewicht(glutGameObjectobject *self)
+{
+	if( (*(*self).p_mem[1]) ) (*self).local_axis = 1;
+	else (*self).local_axis = 0;
+	//Set material -------------------------------------------
+	glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,brons_ambient);
+	glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,brons_diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,brons_specular);
+	glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS ,(*(*self).pf_mem[0]));
+	//Body of object -----------------------------------------
+	glPushMatrix();
+	glTranslatef(-TK_WEIGHT_WIDTH/2,-TK_WEIGHT_HEIGHT,-TK_WEIGHT_DEPTH/2);
+	glBegin(GL_QUADS);
+		//BACK
+		glVertex3f(0,0,0);
+		glVertex3f(TK_WEIGHT_WIDTH,0,0);
+		glVertex3f(TK_WEIGHT_WIDTH,TK_WEIGHT_HEIGHT,0);
+		glVertex3f(0.0,TK_WEIGHT_HEIGHT,0);
+		//TOP
+		glVertex3f(0,TK_WEIGHT_HEIGHT,0);
+		glVertex3f(TK_WEIGHT_WIDTH,TK_WEIGHT_HEIGHT,0);
+		glVertex3f(TK_WEIGHT_WIDTH,TK_WEIGHT_HEIGHT,TK_WEIGHT_DEPTH);
+		glVertex3f(0,TK_WEIGHT_HEIGHT,TK_WEIGHT_DEPTH);
+	glEnd();
+	glBegin(GL_TRIANGLES);
+		glVertex3f(0,0,0);
+		glVertex3f(0,TK_WEIGHT_HEIGHT,0);
+		glVertex3f(0,TK_WEIGHT_HEIGHT,TK_WEIGHT_DEPTH);
+		glVertex3f(TK_WEIGHT_WIDTH,0,0);
+		glVertex3f(TK_WEIGHT_WIDTH,TK_WEIGHT_HEIGHT,0);
+		glVertex3f(TK_WEIGHT_WIDTH,TK_WEIGHT_HEIGHT,TK_WEIGHT_DEPTH);
+	glEnd();
+	float mesh[TK_WINDOW_SEGH][TK_WINDOW_SEGW][3];
+	//Generate points for mesh window
+	for(uint16_t i = 0; i < TK_WINDOW_SEGH; i++)
+	{
+		for(uint16_t j = 0; j < TK_WINDOW_SEGW; j++)
+		{
+			mesh[i][j][0] = j * TK_WEIGHT_WIDTH / (TK_WINDOW_SEGW-1);
+			mesh[i][j][1] = i * TK_WEIGHT_HEIGHT / (TK_WINDOW_SEGH-1);
+			mesh[i][j][2] = TK_WEIGHT_DEPTH * ((float)i/(TK_WINDOW_SEGH-1));
+		}
+	}
+	//Draw window ------------------------------------------------------
+	glMap2f(GL_MAP2_VERTEX_3, 0, 1, 3, TK_WINDOW_SEGW, 0, 1, TK_WINDOW_SEGW*3, TK_WINDOW_SEGH, &mesh[0][0][0]);
+	glEnable(GL_MAP2_VERTEX_3);
+	glMapGrid2f(20, 0.0, 1.0, 20, 0.0, 1.0);
+	glEvalMesh2(GL_FILL, 0, 20, 0, 20);
+	//Draw mesh is flag is enabled
+	if((*self).i_mem[0])
+	{
+		glEvalMesh2(GL_LINE, 0, 20, 0, 20);
+	}
+	glDisable(GL_MAP2_VERTEX_3);
+	//Draw mesh points -------------------------------------------------
+	if((*self).i_mem[1])
+	{
+		for(uint16_t i = 0; i < TK_WINDOW_SEGH; i++)
+			for(uint16_t j = 0; j < TK_WINDOW_SEGW; j++)
+			{
+				glPushMatrix();
+				glTranslatef(mesh[i][j][0],mesh[i][j][1],mesh[i][j][2]);
+				glutSolidCube(0.05);
+				glPopMatrix();
+			}
+	}
+	glPopMatrix();
+}
+
 
 //Render een balk met 2 punten diagonaal.
 void renderBalk(double x0, double y0, double z0, double x1, double y1, double z1)

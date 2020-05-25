@@ -72,6 +72,13 @@ void glutGameCameraPlace(double x, double y, double z, double rotation_xz, doubl
 	(*xPos) = x; (*yPos) = y; (*zPos) = z;
 	(*rotation_lr) = rotation_xz;
 	(*rotation_ud) = rotation_y;
+	//Upadte looking points vars
+	//TODO add own functions for looking point calculations
+	if((*rotation_ud) > 1.5) (*rotation_ud) = 1.5;
+	else if((*rotation_ud) < -1.5) (*rotation_ud) = -1.5;
+	(*xl) = sin((*rotation_lr)) * cos((*rotation_ud));
+	(*zl) = -cos((*rotation_lr)) * cos((*rotation_ud));
+	(*yl) = sin((*rotation_ud));
 }
 
 
